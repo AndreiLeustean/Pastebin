@@ -1,14 +1,65 @@
 const userInput = document.getElementById('inputUser');
 let finalId;
 let lastInput;
+let idBox;
+let isSavingNewText = false;
+let numberPage = 0;
 
 function generateTextDiv(numberOfNewBoxes) {
     let boxes = document.getElementById("textsList");
+    idBox = finalId;
     for (let i = 0; i < numberOfNewBoxes; ++i) {
+        if (!isSavingNewText) {
+            idBox = i + 1;
+        }
         let textBox = document.createElement("div");
-        textBox.setAttribute("id", "box" + (i + 1));
+        textBox.setAttribute("id", "box" + (idBox));
         textBox.classList.add("textBox");
         boxes.appendChild(textBox);
+    }
+}
+
+function textTooLong(text) {
+    return text.length > 30;
+}
+
+function openTextInNewPage(text) {
+    const newPage = window.open('', '_blank');
+    newPage.document.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+            <title>Text complet</title>
+        </head>
+        <body>
+            <h1>Text complet:</h1>
+            <p>${text}</p>
+        </body>
+        </html>
+    `);
+    newPage.document.close();
+}
+
+function finalTextInBox(text, maxLength) {
+    if (text.length > maxLength) {
+        return text.substring(0, 30) + " ...";
+    }
+    return text;
+}
+
+function populateLastBox() {
+    const lastTextBox = document.getElementById(`box${finalId}`);
+    if (lastTextBox) {
+        lastTextBox.textContent = finalTextInBox(lastInput, 30);
+        if (textTooLong(lastInput)) {
+            lastTextBox.addEventListener('click', () => {
+                openTextInNewPage(lastInput);
+            });
+        }
+    } else {
+        console.error(`Text box with ID box${finalId} not found.`);
     }
 }
 
@@ -38,7 +89,12 @@ async function populateBoxes() {
         data.forEach(item => {
             const textBox = document.getElementById(`box${item.id}`);
             if (textBox) {
-                textBox.textContent = item.text_data;
+                textBox.textContent = finalTextInBox(item.text_data, 30);
+                if (textTooLong(item.text_data)) {
+                    textBox.addEventListener('click', () => {
+                        openTextInNewPage(item.text_data);
+                    });
+                }
             }
         });
     } catch (error) {
@@ -63,6 +119,18 @@ async function sendTextToServer(text) {
     }
 }
 
+async function saveText(event) {
+    const text = userInput.value.trim();
+    if (text !== '') {
+        lastInput = text;
+        await sendTextToServer(text);
+        await getLastIdFromServer();
+        ++finalId;
+        generateTextDiv(1);
+        populateLastBox();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async (event) => {
     await getLastIdFromServer();
     console.log("The last ID value is:", finalId);
@@ -70,29 +138,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     populateBoxes();
 });
 
-async function saveText(event) {
-    const text = userInput.value.trim();
-    if (text !== '') {
-        lastInput = text;
-        await sendTextToServer(text);
-        await getLastIdFromServer();
-        console.log(finalId);
-        ++finalId;
-        console.log(finalId);
-        generateTextDiv(1);
-        populateLastBox();
-    }
-}
-
-function populateLastBox() {
-    const lastTextBox = document.getElementById(`box${finalId}`);
-    if (lastTextBox) {
-        lastTextBox.textContent = lastInput;
-    }
-}
-
 document.querySelector('textarea').addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
+        isSavingNewText = true;
         event.preventDefault();
         saveText(event);
         userInput.value = "";
