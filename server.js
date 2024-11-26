@@ -24,7 +24,7 @@ connection.connect(err => {
     console.log('Connected to the MySQL database with ID: ' + connection.threadId);
 });
 
-app.post('/saveText', (req, res) => {
+app.post('/text/save', (req, res) => {
     const { text } = req.body;
     if (!text) {
         return res.status(400).json({ error: 'Text cannot be empty' });
@@ -40,7 +40,7 @@ app.post('/saveText', (req, res) => {
     });
 });
 
-app.get('/getLastId', (req, res) => {
+app.get('/text/last-id', (req, res) => {
     const getLastIdQuery = 'SELECT MAX(id) AS last_id FROM user_texts';
 
     connection.query(getLastIdQuery, (err, results) => {
@@ -58,7 +58,7 @@ app.get('/getLastId', (req, res) => {
     });
 });
 
-app.get('/getTexts', (req, res) => {
+app.get('/texts', (req, res) => {
     const query = 'SELECT * FROM user_texts';
     connection.query(query, (err, results) => {
         if (err) {
