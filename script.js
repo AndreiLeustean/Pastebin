@@ -3,7 +3,6 @@ let finalId;
 let lastInput;
 let idBox;
 let isSavingNewText = false;
-let numberPage = 0;
 
 function generateTextDiv(numberOfNewBoxes) {
     let boxes = document.getElementById("textsList");
